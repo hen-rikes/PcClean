@@ -54,10 +54,10 @@ fn void display_person(Person* person) {
 
 fn void main() {
     raylib::set_config_flags(ConfigFlags.FLAG_WINDOW_RESIZABLE.value | ConfigFlags.FLAG_WINDOW_ALWAYS_RUN.value);
-    raylib::init_window(width, height, "Hello from c3");
+    raylib::init_window(width, height, "PcClean");
     defer raylib::close_window();
 
-    float[<2>] start_pos = { (float)(0.1*width), (float)(0.1*height) }; // Variable added to control where the group will be.
+    float[<2>] start_pos = { (float)(0.1*width), (float)(0.1*height) }; // Variable added to control where the group pos is.
     float[<2>] rec_size = { 200.0, 100.0 };
     float padding = 100.0;
 
