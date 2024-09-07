@@ -58,31 +58,32 @@ fn void init_person(Person* person, String name, float[<2>] pos, float[<2>] size
     };
 }
 
-fn uint check_person_collision(Person[] persons, float[<2>] mouse_pos) {
+fn uint check_persons_collision(Person[] persons, float[<2>] mouse_pos) {
+    uint idx = 0;
     foreach (index, &p : persons) {
         if (raylib::check_collision_point_rec(mouse_pos, {p.pos.x, p.pos.y, p.size.x, p.size.y})) {
             p.rec_color = raylib::MAGENTA;
+            idx = (uint)index;
             if (raylib::is_mouse_button_pressed(raylib::MouseButton.MOUSE_BUTTON_LEFT.value)) {
-                p.active != p.active;
-                return 1;
+                p.active = ~p.active;
+                idx = (uint)index;
             }
         } else {
             p.rec_color = raylib::BLUE;
         }
     }
-    return 1000;
+    return idx;
 }
 
 fn void display_person(Person* person) {
     raylib::draw_rectangle_lines((int)person.pos.x, (int)person.pos.y, (int)person.size.x, (int)person.size.y, person.rec_color);
     raylib::draw_text(person.name, (int)person.pos.x, (int)person.pos.y, person.font_size, person.text_color);
 
-    if (person.active) {
-        person.rec_color = raylib::RED;
-    } else {
-
-        person.rec_color = raylib::GREEN;
-    }
+    //if (person.active) {
+    //    person.rec_color = raylib::RED;
+    //} else {
+    //    person.rec_color = raylib::GREEN;
+    //}
 }
 
 
@@ -95,6 +96,7 @@ fn void main() {
     float[<2>] rec_size = { 200.0, 100.0 };
     float padding = 100.0;
 
+    // Initialiazing every person
     for (uint i = 0; i < PERSONS_NUM; i++) {
         if (i < NGP_LENGTH) {
             init_person(&persons[i],
@@ -107,9 +109,10 @@ fn void main() {
                 .text_color = raylib::WHITE);
         }
         else if (i >= NGP_LENGTH) {
+            uint idx = i-NGP_LENGTH;
             init_person(&persons[i],
-                .name       = afternoongp_names[i%AGP_LENGTH],
-                .pos        = { start_pos.x+rec_size.x+padding, start_pos.y+rec_size.y*(i%AGP_LENGTH) },
+                .name       = afternoongp_names[idx],
+                .pos        = { start_pos.x+rec_size.x+padding, start_pos.y+rec_size.y*(idx) },
                 .size       = rec_size,
                 .active     = false,
                 .font_size  = 42,
@@ -123,16 +126,20 @@ fn void main() {
         @update_screen_size(width, height);
         float[<2>] mouse_pos = raylib::get_mouse_position();
 
-        // Check for collisions with the persons
-        uint index = check_person_collision(&persons, mouse_pos);
-        raylib::draw_text(raylib::text_format("index: %zu", index), 0, height-40, 32, raylib::GREEN);
+        // Check for collisions with persons
+        uint index = check_persons_collision(&persons, mouse_pos);
+        //raylib::draw_text(raylib::text_format("index: %zu", index), 0, height-40, 32, raylib::GREEN);
 
         raylib::begin_drawing();
         raylib::clear_backgroud(raylib::BLACK);
 
-        // Draw the persons
-        foreach (p : persons) {
+        // Draw every person
+        foreach (idx, p : persons) {
             display_person(&p);
+            if (p.active) {
+                char* t = raylib::text_format("index: %d", idx);
+                raylib::draw_text(t, raylib::measure_text(t, 30)*((CInt)idx), height-30, 24, raylib::GREEN);
+            }
         }
 
         raylib::draw_fps(0, 0);
