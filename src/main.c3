@@ -25,6 +25,37 @@ struct Person {
     char[<4>] text_color;
 }
 
+String[*] noongp_names = { 
+    Shift.NOON.name,
+    "henrique",
+    "hugo" 
+};
+
+String[*] afternoongp_names = { 
+    Shift.AFTERNOON.name,
+    "gustavo",
+    "matheus",
+    "letícia" 
+};
+
+Person[NGP_LENGTH] noongp;
+Person[AGP_LENGTH] afternoongp;
+
+Person*[2] groups = {
+    &noongp,
+    &afternoongp
+};
+
+String*[GROUPS_NUM] names = {
+    &noongp_names,
+    &afternoongp_names
+};
+
+const uint NGP_LENGTH = noongp_names.len;
+const uint AGP_LENGTH = afternoongp_names.len;
+const uint GROUPS_NUM = Shift.elements;
+
+
 fn void init_person(Person* person, String name, float[<2>] pos, float[<2>] size, bool active, int font_size, char[<4>] rec_color, char[<4>] text_color) {
     *person = {
         .name = name,
@@ -52,6 +83,7 @@ fn void display_person(Person* person) {
     raylib::draw_text(person.name, (int)person.pos.x, (int)person.pos.y, person.font_size, person.text_color);
 }
 
+
 fn void main() {
     raylib::set_config_flags(ConfigFlags.FLAG_WINDOW_RESIZABLE.value | ConfigFlags.FLAG_WINDOW_ALWAYS_RUN.value);
     raylib::init_window(width, height, "PcClean");
@@ -61,37 +93,30 @@ fn void main() {
     float[<2>] rec_size = { 200.0, 100.0 };
     float padding = 100.0;
 
-    String[*] noongp_names = { Shift.NOON.name, "henrique", "hugo" };
-    String[*] afternoongp_names = { Shift.AFTERNOON.name, "gustavo", "matheus", "letícia" };
 
-    const uint NGP_LENGTH = noongp_names.len;
-    const uint AGP_LENGTH = afternoongp_names.len;
-
-    // Noon shift creation.
-    Person[NGP_LENGTH] noongp;
+    // Noon shift initialization.
     for (uint i = 0; i < NGP_LENGTH; i++) {
         init_person(&noongp[i],
-            noongp_names[i],
-            { start_pos.x, start_pos.y+rec_size.y*i },
-            rec_size,
-            false,
-            42,
-            raylib::BLUE,
-            raylib::WHITE);
+            .name       = names[0][i],
+            .pos        = { start_pos.x, start_pos.y+rec_size.y*i },
+            .size       = rec_size,
+            .active     = false,
+            .font_size  = 42,
+            .rec_color  = raylib::BLUE,
+            .text_color = raylib::WHITE);
     }
 
-    // AfterNoon shift creation.
-    Person[AGP_LENGTH] afternoongp;
+    // AfterNoon shift initialization.
     for (uint i = 0; i < AGP_LENGTH; i++) {
-        afternoongp[i] = {
-            .name       = afternoongp_names[i],
+        init_person(&afternoongp[i],
+            .name       = names[1][i],
             .pos        = { start_pos.x+rec_size.x+padding, start_pos.y+rec_size.y*i },
             .size       = rec_size,
             .active     = false,
             .font_size  = 42,
             .rec_color  = raylib::BLUE,
             .text_color = raylib::WHITE,
-        };
+        );
     }
 
     while (!raylib::window_should_close()) {
