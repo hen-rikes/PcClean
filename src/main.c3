@@ -58,32 +58,45 @@ fn void init_person(Person* person, String name, float[<2>] pos, float[<2>] size
     };
 }
 
-fn uint check_persons_collision(Person[] persons, float[<2>] mouse_pos) {
-    uint idx = 0;
+fn void check_persons_collision(Person[] persons, float[<2>] mouse_pos, uint* current_cleaner) {
+    //uint idx = 0;
     foreach (index, &p : persons) {
         if (raylib::check_collision_point_rec(mouse_pos, {p.pos.x, p.pos.y, p.size.x, p.size.y})) {
             p.rec_color = raylib::MAGENTA;
-            idx = (uint)index;
+            //idx = (uint)index;
             if (raylib::is_mouse_button_pressed(raylib::MouseButton.MOUSE_BUTTON_LEFT.value)) {
-                p.active = ~p.active;
-                idx = (uint)index;
+                //p.active = ~p.active;
+                //idx = (uint)index;
+                *current_cleaner = (uint)index;
             }
         } else {
             p.rec_color = raylib::BLUE;
         }
     }
-    return idx;
+    //return idx;
+}
+
+fn uint get_cleaner(Person[] persons) {
+    uint cleaner_index;
+    foreach (index, p : persons) {
+        if (p.active) {
+            cleaner_index = (uint)index;
+            break;
+        }
+    }
+
+    return cleaner_index;
 }
 
 fn void display_person(Person* person) {
     raylib::draw_rectangle_lines((int)person.pos.x, (int)person.pos.y, (int)person.size.x, (int)person.size.y, person.rec_color);
     raylib::draw_text(person.name, (int)person.pos.x, (int)person.pos.y, person.font_size, person.text_color);
+}
 
-    //if (person.active) {
-    //    person.rec_color = raylib::RED;
-    //} else {
-    //    person.rec_color = raylib::GREEN;
-    //}
+fn void display_cleaner(Person* person) {
+    float[<2>] pos = { (float)width*0.1, (float)height*0.9-person.size.y };
+    raylib::draw_rectangle_lines((int)pos.x, (int)pos.y, (int)person.size.x, (int)person.size.y, person.rec_color);
+    raylib::draw_text(person.name, (int)pos.x, (int)pos.y, person.font_size, person.text_color);
 }
 
 
@@ -109,7 +122,7 @@ fn void main() {
                 .text_color = raylib::WHITE);
         }
         else if (i >= NGP_LENGTH) {
-            uint idx = i-NGP_LENGTH;
+            uint idx = i-NGP_LENGTH; // Resets the counter for the next group
             init_person(&persons[i],
                 .name       = afternoongp_names[idx],
                 .pos        = { start_pos.x+rec_size.x+padding, start_pos.y+rec_size.y*(idx) },
@@ -121,14 +134,20 @@ fn void main() {
             );
         }
     }
+
+
+    uint cleaner_index;
     
     while (!raylib::window_should_close()) {
         @update_screen_size(width, height);
         float[<2>] mouse_pos = raylib::get_mouse_position();
 
         // Check for collisions with persons
-        uint index = check_persons_collision(&persons, mouse_pos);
+        check_persons_collision(&persons, mouse_pos, &cleaner_index);
         //raylib::draw_text(raylib::text_format("index: %zu", index), 0, height-40, 32, raylib::GREEN);
+
+        //cleaner_index = get_cleaner(&persons); OLD
+        get_cleaner(&persons);
 
         raylib::begin_drawing();
         raylib::clear_backgroud(raylib::BLACK);
@@ -141,6 +160,9 @@ fn void main() {
                 raylib::draw_text(t, raylib::measure_text(t, 30)*((CInt)idx), height-30, 24, raylib::GREEN);
             }
         }
+
+        // Draw something 
+        display_cleaner(&persons[cleaner_index]);
 
         raylib::draw_fps(0, 0);
         raylib::end_drawing();
