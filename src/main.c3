@@ -38,22 +38,12 @@ String[*] afternoongp_names = {
     "letícia" 
 };
 
-Person[NGP_LENGTH] noongp;
-Person[AGP_LENGTH] afternoongp;
+Person[PERSONS_NUM] persons;
 
-Person*[2] groups = {
-    &noongp,
-    &afternoongp
-};
-
-String*[GROUPS_NUM] names = {
-    &noongp_names,
-    &afternoongp_names
-};
-
-const uint NGP_LENGTH = noongp_names.len;
-const uint AGP_LENGTH = afternoongp_names.len;
-const uint GROUPS_NUM = Shift.elements;
+const uint NGP_LENGTH  = noongp_names.len;
+const uint AGP_LENGTH  = afternoongp_names.len;
+const uint GROUPS_NUM  = Shift.elements;
+const uint PERSONS_NUM = NGP_LENGTH+AGP_LENGTH;
 
 
 fn void init_person(Person* person, String name, float[<2>] pos, float[<2>] size, bool active, int font_size, char[<4>] rec_color, char[<4>] text_color) {
@@ -68,19 +58,31 @@ fn void init_person(Person* person, String name, float[<2>] pos, float[<2>] size
     };
 }
 
-fn void check_shift_collision(Person[] shift, float[<2>] mouse_pos) {
-    foreach (&p : shift) {
+fn uint check_person_collision(Person[] persons, float[<2>] mouse_pos) {
+    foreach (index, &p : persons) {
         if (raylib::check_collision_point_rec(mouse_pos, {p.pos.x, p.pos.y, p.size.x, p.size.y})) {
             p.rec_color = raylib::MAGENTA;
+            if (raylib::is_mouse_button_pressed(raylib::MouseButton.MOUSE_BUTTON_LEFT.value)) {
+                p.active != p.active;
+                return 1;
+            }
         } else {
             p.rec_color = raylib::BLUE;
         }
     }
+    return 1000;
 }
 
 fn void display_person(Person* person) {
     raylib::draw_rectangle_lines((int)person.pos.x, (int)person.pos.y, (int)person.size.x, (int)person.size.y, person.rec_color);
     raylib::draw_text(person.name, (int)person.pos.x, (int)person.pos.y, person.font_size, person.text_color);
+
+    if (person.active) {
+        person.rec_color = raylib::RED;
+    } else {
+
+        person.rec_color = raylib::GREEN;
+    }
 }
 
 
@@ -93,51 +95,44 @@ fn void main() {
     float[<2>] rec_size = { 200.0, 100.0 };
     float padding = 100.0;
 
-
-    // Noon shift initialization.
-    for (uint i = 0; i < NGP_LENGTH; i++) {
-        init_person(&noongp[i],
-            .name       = names[0][i],
-            .pos        = { start_pos.x, start_pos.y+rec_size.y*i },
-            .size       = rec_size,
-            .active     = false,
-            .font_size  = 42,
-            .rec_color  = raylib::BLUE,
-            .text_color = raylib::WHITE);
+    for (uint i = 0; i < PERSONS_NUM; i++) {
+        if (i < NGP_LENGTH) {
+            init_person(&persons[i],
+                .name       = noongp_names[i],
+                .pos        = { start_pos.x, start_pos.y+rec_size.y*i },
+                .size       = rec_size,
+                .active     = false,
+                .font_size  = 42,
+                .rec_color  = raylib::BLUE,
+                .text_color = raylib::WHITE);
+        }
+        else if (i >= NGP_LENGTH) {
+            init_person(&persons[i],
+                .name       = afternoongp_names[i%AGP_LENGTH],
+                .pos        = { start_pos.x+rec_size.x+padding, start_pos.y+rec_size.y*(i%AGP_LENGTH) },
+                .size       = rec_size,
+                .active     = false,
+                .font_size  = 42,
+                .rec_color  = raylib::BLUE,
+                .text_color = raylib::WHITE,
+            );
+        }
     }
-
-    // AfterNoon shift initialization.
-    for (uint i = 0; i < AGP_LENGTH; i++) {
-        init_person(&afternoongp[i],
-            .name       = names[1][i],
-            .pos        = { start_pos.x+rec_size.x+padding, start_pos.y+rec_size.y*i },
-            .size       = rec_size,
-            .active     = false,
-            .font_size  = 42,
-            .rec_color  = raylib::BLUE,
-            .text_color = raylib::WHITE,
-        );
-    }
-
+    
     while (!raylib::window_should_close()) {
         @update_screen_size(width, height);
         float[<2>] mouse_pos = raylib::get_mouse_position();
 
-        // Check for collisions with the users
-        check_shift_collision(&noongp, mouse_pos);
-        check_shift_collision(&afternoongp, mouse_pos);
+        // Check for collisions with the persons
+        uint index = check_person_collision(&persons, mouse_pos);
+        raylib::draw_text(raylib::text_format("index: %zu", index), 0, height-40, 32, raylib::GREEN);
 
         raylib::begin_drawing();
         raylib::clear_backgroud(raylib::BLACK);
 
-        // Draw NOON shift.
-        foreach (noon : noongp) {
-            display_person(&noon);
-        }
-
-        // Draw AFTERNOON shift.
-        foreach (aft : afternoongp) {
-            display_person(&aft);
+        // Draw the persons
+        foreach (p : persons) {
+            display_person(&p);
         }
 
         raylib::draw_fps(0, 0);
