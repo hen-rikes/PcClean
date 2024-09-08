@@ -18,7 +18,6 @@ struct Person {
     String name;
     float[<2>] pos;
     float[<2>] size;
-    bool active;
 
     uint font_size;
     char[<4>] rec_color; // Will be removed later when we add textures.
@@ -39,6 +38,7 @@ String[*] afternoongp_names = {
 };
 
 Person[PERSONS_NUM] persons;
+uint[GROUPS_NUM] cleaners;
 
 const uint NGP_LENGTH  = noongp_names.len;
 const uint AGP_LENGTH  = afternoongp_names.len;
@@ -51,41 +51,29 @@ fn void init_person(Person* person, String name, float[<2>] pos, float[<2>] size
         .name = name,
         .pos  = pos,
         .size = size,
-        .active = active,
         .font_size = font_size,
         .rec_color = rec_color,
         .text_color = text_color,
     };
 }
 
-fn void check_persons_collision(Person[] persons, float[<2>] mouse_pos, uint* current_cleaner) {
-    //uint idx = 0;
+fn void check_persons_collision(Person[] persons, float[<2>] mouse_pos, uint* cleaners) {
     foreach (index, &p : persons) {
         if (raylib::check_collision_point_rec(mouse_pos, {p.pos.x, p.pos.y, p.size.x, p.size.y})) {
             p.rec_color = raylib::MAGENTA;
-            //idx = (uint)index;
             if (raylib::is_mouse_button_pressed(raylib::MouseButton.MOUSE_BUTTON_LEFT.value)) {
-                //p.active = ~p.active;
-                //idx = (uint)index;
-                *current_cleaner = (uint)index;
+                if (index < NGP_LENGTH) {
+                    cleaners[0] = (uint)index; // NOON group(0)
+                }
+                else if (index >= NGP_LENGTH) {
+                    cleaners[1] = (uint)index; // AFTERNOON group(1)
+                }
+                //*current_cleaner = (uint)index;
             }
         } else {
             p.rec_color = raylib::BLUE;
         }
     }
-    //return idx;
-}
-
-fn uint get_cleaner(Person[] persons) {
-    uint cleaner_index;
-    foreach (index, p : persons) {
-        if (p.active) {
-            cleaner_index = (uint)index;
-            break;
-        }
-    }
-
-    return cleaner_index;
 }
 
 fn void display_person(Person* person) {
@@ -93,8 +81,7 @@ fn void display_person(Person* person) {
     raylib::draw_text(person.name, (int)person.pos.x, (int)person.pos.y, person.font_size, person.text_color);
 }
 
-fn void display_cleaner(Person* person) {
-    float[<2>] pos = { (float)width*0.1, (float)height*0.9-person.size.y };
+fn void display_cleaner(Person* person, float[<2>] pos) {
     raylib::draw_rectangle_lines((int)pos.x, (int)pos.y, (int)person.size.x, (int)person.size.y, person.rec_color);
     raylib::draw_text(person.name, (int)pos.x, (int)pos.y, person.font_size, person.text_color);
 }
@@ -106,7 +93,7 @@ fn void main() {
     defer raylib::close_window();
 
     float[<2>] start_pos = { (float)(0.1*width), (float)(0.1*height) }; // Variable added to control where the group pos is.
-    float[<2>] rec_size = { 200.0, 100.0 };
+    float[<2>] rec_size = { 200.0, 50.0 };
     float padding = 100.0;
 
     // Initialiazing every person
@@ -136,33 +123,37 @@ fn void main() {
     }
 
 
-    uint cleaner_index;
+    //uint cleaner_index;
+    // Cleaners start position
+    //float[<2>] pos = { (float)width*0.1, (float)height*0.9-person.size.y };
+    float[<2>] pos = { (float)width*0.1, (float)height*0.7 };
     
     while (!raylib::window_should_close()) {
         @update_screen_size(width, height);
         float[<2>] mouse_pos = raylib::get_mouse_position();
 
         // Check for collisions with persons
-        check_persons_collision(&persons, mouse_pos, &cleaner_index);
+        check_persons_collision(&persons, mouse_pos, &cleaners);
         //raylib::draw_text(raylib::text_format("index: %zu", index), 0, height-40, 32, raylib::GREEN);
 
         //cleaner_index = get_cleaner(&persons); OLD
-        get_cleaner(&persons);
-
         raylib::begin_drawing();
         raylib::clear_backgroud(raylib::BLACK);
 
         // Draw every person
         foreach (idx, p : persons) {
             display_person(&p);
-            if (p.active) {
-                char* t = raylib::text_format("index: %d", idx);
-                raylib::draw_text(t, raylib::measure_text(t, 30)*((CInt)idx), height-30, 24, raylib::GREEN);
-            }
+            //char* t = raylib::text_format("index: %d", cleaner_index);
+            //raylib::draw_text(t, raylib::measure_text(t, 30)*((CInt)cleaner_index), height-30, 24, raylib::GREEN);
         }
 
-        // Draw something 
-        display_cleaner(&persons[cleaner_index]);
+        // Draw the cleaners 
+        for (uint i = 0; i < cleaners.len; i++) {
+            uint index = cleaners[i];
+            display_cleaner(&persons[index], { 
+                pos.x+(persons[index].size.x+100)*i, pos.y
+            });
+        }
 
         raylib::draw_fps(0, 0);
         raylib::end_drawing();
